@@ -92,7 +92,11 @@ WITHINGS_CLIENT_SECRET=...
 WITHINGS_REFRESH_TOKEN=...
 ```
 
-Optional: mount a volume and set `WITHINGS_TOKEN_FILE=/data/tokens.json` so rotated refresh tokens survive container restarts. Withings rotates refresh tokens; without a writable store you may need to re-run `auth` after long idle periods or many refreshes.
+**Required for long-lived deployments:** mount a writable volume and set `WITHINGS_TOKEN_FILE=/data/tokens.json` so rotated refresh tokens survive container restarts. Withings rotates refresh tokens on every refresh; without a writable store, auth will break after ~8 hours when the gateway starts a fresh container.
+
+Example volume (homeserver): `/home/ypsilon/data/withings:/data`
+
+If your GHCR package is private and the gateway host cannot pull it, either grant the host a token with `read:packages`, or build the image on the host from this repo and keep `--pull never` (Docker MCP Gateway does this when the image is already local).
 
 ## Cursor / Claude Desktop
 
