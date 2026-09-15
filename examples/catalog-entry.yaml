@@ -1,0 +1,27 @@
+# Example Docker MCP Gateway / catalog.yaml registry entry.
+# Replace <owner> with your GitHub org or username after publishing to GHCR.
+
+registry:
+  withings:
+    title: "Withings"
+    description: "Query Withings health data from scales and watches (weight, body composition, intraday HR/temp/SpO2, activity, sleep)."
+    type: "server"
+    image: "ghcr.io/<owner>/withings-mcp:latest"
+    secrets:
+      - name: "withings.WITHINGS_CLIENT_ID"
+        env: "WITHINGS_CLIENT_ID"
+        example: "your_client_id"
+      - name: "withings.WITHINGS_CLIENT_SECRET"
+        env: "WITHINGS_CLIENT_SECRET"
+        example: "your_client_secret"
+      - name: "withings.WITHINGS_REFRESH_TOKEN"
+        env: "WITHINGS_REFRESH_TOKEN"
+        example: "your_refresh_token"
+    # Optional: persist rotated refresh tokens across container restarts
+    # volumes:
+    #   - "/path/on/host/withings:/data"
+    # env:
+    #   - name: "WITHINGS_TOKEN_FILE"
+    #     value: "/data/tokens.json"
+    #   - name: "WITHINGS_LOG_LEVEL"
+    #     value: "info"
