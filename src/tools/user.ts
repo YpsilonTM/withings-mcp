@@ -8,7 +8,7 @@ export function registerUserTools(
   client: WithingsClient,
 ): void {
   server.registerTool(
-    "list_devices",
+    "withings_list_devices",
     {
       description:
         "List Withings devices paired to the authorized account (e.g. Scale, Activity Tracker, Sleep Monitor). Useful to see which data sources exist before querying.",
@@ -16,18 +16,18 @@ export function registerUserTools(
     async () => {
       const started = Date.now();
       try {
-        log.info("Tool call", { tool: "list_devices" });
+        log.info("Tool call", { tool: "withings_list_devices" });
         const body = await client.request("/v2/user", { action: "getdevice" });
         const devices = (body as { devices?: unknown[] }).devices ?? [];
         log.info("Tool done", {
-          tool: "list_devices",
+          tool: "withings_list_devices",
           durationMs: Date.now() - started,
           count: Array.isArray(devices) ? devices.length : undefined,
         });
         return textResult(body);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "list_devices",
+          tool: "withings_list_devices",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);
@@ -36,7 +36,7 @@ export function registerUserTools(
   );
 
   server.registerTool(
-    "get_goals",
+    "withings_get_goals",
     {
       description:
         "Get health goals configured in the Withings account (e.g. steps, weight, sleep targets), if the user has set any.",
@@ -44,16 +44,16 @@ export function registerUserTools(
     async () => {
       const started = Date.now();
       try {
-        log.info("Tool call", { tool: "get_goals" });
+        log.info("Tool call", { tool: "withings_get_goals" });
         const body = await client.request("/v2/user", { action: "getgoals" });
         log.info("Tool done", {
-          tool: "get_goals",
+          tool: "withings_get_goals",
           durationMs: Date.now() - started,
         });
         return textResult(body);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_goals",
+          tool: "withings_get_goals",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);

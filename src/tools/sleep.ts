@@ -20,10 +20,10 @@ export function registerSleepTools(
   client: WithingsClient,
 ): void {
   server.registerTool(
-    "get_sleep_summary",
+    "withings_get_sleep_summary",
     {
       description:
-        "Fetch per-night sleep summaries (score, stages, HR/RR stats, snoring, etc.). Default range is the last 7 days. Typical sources: Sleep Analyzer / Sleep Mat, or watch sleep tracking. For minute-level detail within a night, use get_sleep.",
+        "Fetch per-night sleep summaries (score, stages, HR/RR stats, snoring, etc.). Default range is the last 7 days. Typical sources: Sleep Analyzer / Sleep Mat, or watch sleep tracking. For minute-level detail within a night, use withings_get_sleep.",
       inputSchema: {
         startdateymd: z
           .string()
@@ -51,7 +51,7 @@ export function registerSleepTools(
       try {
         const { startdateymd, enddateymd } = resolveYmdRange(args);
         log.info("Tool call", {
-          tool: "get_sleep_summary",
+          tool: "withings_get_sleep_summary",
           startdateymd,
           enddateymd,
           lastupdate: args.lastupdate,
@@ -65,14 +65,14 @@ export function registerSleepTools(
         });
         const series = (body as { series?: unknown[] }).series ?? [];
         log.info("Tool done", {
-          tool: "get_sleep_summary",
+          tool: "withings_get_sleep_summary",
           durationMs: Date.now() - started,
           count: Array.isArray(series) ? series.length : undefined,
         });
         return textResult(body);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_sleep_summary",
+          tool: "withings_get_sleep_summary",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);
@@ -81,10 +81,10 @@ export function registerSleepTools(
   );
 
   server.registerTool(
-    "get_sleep",
+    "withings_get_sleep",
     {
       description:
-        "Fetch high-frequency sleep stage and vital series for a time window (Sleep get): stages, HR, respiration, snoring, HRV, etc. Default range is the last 24 hours. Prefer get_sleep_summary for multi-night overviews; use this for detailed series within a night. Typical sources: Sleep Analyzer / Sleep Mat, or watch sleep tracking.",
+        "Fetch high-frequency sleep stage and vital series for a time window (Sleep get): stages, HR, respiration, snoring, HRV, etc. Default range is the last 24 hours. Prefer withings_get_sleep_summary for multi-night overviews; use this for detailed series within a night. Typical sources: Sleep Analyzer / Sleep Mat, or watch sleep tracking.",
       inputSchema: {
         startdate: z
           .number()
@@ -110,7 +110,7 @@ export function registerSleepTools(
           ...args,
           defaultHours: 24,
         });
-        log.info("Tool call", { tool: "get_sleep", startdate, enddate });
+        log.info("Tool call", { tool: "withings_get_sleep", startdate, enddate });
         const body = await client.request("/v2/sleep", {
           action: "get",
           startdate,
@@ -119,14 +119,14 @@ export function registerSleepTools(
         });
         const series = (body as { series?: unknown[] }).series ?? [];
         log.info("Tool done", {
-          tool: "get_sleep",
+          tool: "withings_get_sleep",
           durationMs: Date.now() - started,
           count: Array.isArray(series) ? series.length : undefined,
         });
         return textResult(body);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_sleep",
+          tool: "withings_get_sleep",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);

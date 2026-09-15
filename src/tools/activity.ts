@@ -20,10 +20,10 @@ export function registerActivityTools(
   client: WithingsClient,
 ): void {
   server.registerTool(
-    "get_activity",
+    "withings_get_activity",
     {
       description:
-        "Fetch daily activity summaries from the watch/tracker (steps, distance, calories, HR zones, etc.). Prefer this for day-level watch stats; use get_intraday_activity for minute-level series.",
+        "Fetch daily activity summaries from the watch/tracker (steps, distance, calories, HR zones, etc.). Prefer this for day-level watch stats; use withings_get_intraday_activity for minute-level series.",
       inputSchema: {
         startdateymd: z
           .string()
@@ -47,7 +47,7 @@ export function registerActivityTools(
       try {
         const { startdateymd, enddateymd } = resolveYmdRange(args);
         log.info("Tool call", {
-          tool: "get_activity",
+          tool: "withings_get_activity",
           startdateymd,
           enddateymd,
         });
@@ -60,14 +60,14 @@ export function registerActivityTools(
         });
         const activities = (body as { activities?: unknown[] }).activities ?? [];
         log.info("Tool done", {
-          tool: "get_activity",
+          tool: "withings_get_activity",
           durationMs: Date.now() - started,
           count: Array.isArray(activities) ? activities.length : undefined,
         });
         return textResult(body);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_activity",
+          tool: "withings_get_activity",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);
@@ -76,7 +76,7 @@ export function registerActivityTools(
   );
 
   server.registerTool(
-    "get_intraday_activity",
+    "withings_get_intraday_activity",
     {
       description:
         "Fetch high-resolution watch/tracker series for up to 24 hours: heart_rate, core_body_temperature, spo2_auto, steps, HRV, etc. This is the main source for continuous vitals from a Withings watch (not the scale). Withings returns at most 24 hours per call.",
@@ -111,7 +111,7 @@ export function registerActivityTools(
           startdate = enddate - maxSpan;
         }
         log.info("Tool call", {
-          tool: "get_intraday_activity",
+          tool: "withings_get_intraday_activity",
           startdate,
           enddate,
         });
@@ -122,13 +122,13 @@ export function registerActivityTools(
           data_fields: args.data_fields ?? DEFAULT_INTRADAY_FIELDS,
         });
         log.info("Tool done", {
-          tool: "get_intraday_activity",
+          tool: "withings_get_intraday_activity",
           durationMs: Date.now() - started,
         });
         return textResult(body);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_intraday_activity",
+          tool: "withings_get_intraday_activity",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);
@@ -137,7 +137,7 @@ export function registerActivityTools(
   );
 
   server.registerTool(
-    "get_workouts",
+    "withings_get_workouts",
     {
       description:
         "Fetch logged workouts from the watch/activity tracker for a date range (default last 7 days). Includes session type, duration, and optional metrics like calories, HR, distance, steps.",
@@ -164,7 +164,7 @@ export function registerActivityTools(
       try {
         const { startdateymd, enddateymd } = resolveYmdRange(args);
         log.info("Tool call", {
-          tool: "get_workouts",
+          tool: "withings_get_workouts",
           startdateymd,
           enddateymd,
         });
@@ -177,14 +177,14 @@ export function registerActivityTools(
         });
         const series = (body as { series?: unknown[] }).series ?? [];
         log.info("Tool done", {
-          tool: "get_workouts",
+          tool: "withings_get_workouts",
           durationMs: Date.now() - started,
           count: Array.isArray(series) ? series.length : undefined,
         });
         return textResult(body);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_workouts",
+          tool: "withings_get_workouts",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);

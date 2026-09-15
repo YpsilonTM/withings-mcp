@@ -31,7 +31,7 @@ async function getMeas(
 
   const groups = decodeMeasureGroups(body.measuregrps ?? []);
   log.info("Decoded measurements", {
-    tool: "get_measurements",
+    tool: "withings_get_measurements",
     groupCount: groups.length,
     more: body.more,
     offset: body.offset,
@@ -73,13 +73,13 @@ export function registerMeasureTools(
   client: WithingsClient,
 ): void {
   server.registerTool(
-    "get_measure_types",
+    "withings_get_measure_types",
     {
       description:
-        "List known Withings measurement type IDs used by getmeas (weight, BP, SpO2, spot temperature, etc.). No API call. For continuous watch vitals (HR, core temp, SpO2), prefer get_intraday_activity instead of these spot types.",
+        "List known Withings measurement type IDs used by getmeas (weight, BP, SpO2, spot temperature, etc.). No API call. For continuous watch vitals (HR, core temp, SpO2), prefer withings_get_intraday_activity instead of these spot types.",
     },
     async () => {
-      log.info("Tool call", { tool: "get_measure_types" });
+      log.info("Tool call", { tool: "withings_get_measure_types" });
       return textResult({
         types: Object.entries(MEASURE_TYPES).map(([id, meta]) => ({
           type: Number(id),
@@ -91,17 +91,17 @@ export function registerMeasureTools(
   );
 
   server.registerTool(
-    "get_measurements",
+    "withings_get_measurements",
     {
       description:
-        "Fetch spot/scale health measurements via getmeas (weight, composition, BP, spot HR/temp/SpO2, etc.). Optionally filter by meastypes. Values are decoded (value * 10^unit). This is NOT the main source for continuous watch vitals — use get_intraday_activity (or get_heart_rate / get_body_temperature with include_intraday=true) for those.",
+        "Fetch spot/scale health measurements via getmeas (weight, composition, BP, spot HR/temp/SpO2, etc.). Optionally filter by meastypes. Values are decoded (value * 10^unit). This is NOT the main source for continuous watch vitals — use withings_get_intraday_activity (or withings_get_heart_rate / withings_get_body_temperature with include_intraday=true) for those.",
       inputSchema: {
         ...rangeSchema,
         meastypes: z
           .array(z.number().int())
           .optional()
           .describe(
-            "Spot measurement type IDs to include. Omit for all. Use get_measure_types for the catalog. Continuous watch metrics are not in this list.",
+            "Spot measurement type IDs to include. Omit for all. Use withings_get_measure_types for the catalog. Continuous watch metrics are not in this list.",
           ),
       },
     },
@@ -110,7 +110,7 @@ export function registerMeasureTools(
       try {
         const { startdate, enddate } = resolveUnixRange(args);
         log.info("Tool call", {
-          tool: "get_measurements",
+          tool: "withings_get_measurements",
           startdate,
           enddate,
           meastypes: args.meastypes,
@@ -124,14 +124,14 @@ export function registerMeasureTools(
           args.offset,
         );
         log.info("Tool done", {
-          tool: "get_measurements",
+          tool: "withings_get_measurements",
           durationMs: Date.now() - started,
           count: data.count,
         });
         return textResult(data);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_measurements",
+          tool: "withings_get_measurements",
           error: e instanceof Error ? e.message : String(e),
           ...(getLogLevel() === "debug" && e instanceof Error
             ? { stack: e.stack }
@@ -189,28 +189,28 @@ export function registerMeasureTools(
   };
 
   makeTypedTool(
-    "get_weight",
+    "withings_get_weight",
     "Fetch scale weight measurements (meastype 1). Typical source: Withings scale.",
     [...MEASTYPE_GROUPS.weight],
   );
   makeTypedTool(
-    "get_body_composition",
+    "withings_get_body_composition",
     "Fetch scale body composition: fat free mass, fat ratio, fat mass, muscle, hydration, bone (types 5,6,8,76,77,88). Typical source: Withings scale.",
     [...MEASTYPE_GROUPS.body_composition],
   );
   makeTypedTool(
-    "get_blood_pressure",
+    "withings_get_blood_pressure",
     "Fetch blood pressure and related spot pulse (diastolic 9, systolic 10, heart rate 11). Typical source: BPM or scale, not continuous watch HR.",
     [...MEASTYPE_GROUPS.blood_pressure],
   );
   makeTypedTool(
-    "get_spo2",
-    "Fetch spot SpO2 measurements (meastype 54) from getmeas. For continuous watch SpO2, prefer get_intraday_activity with spo2_auto.",
+    "withings_get_spo2",
+    "Fetch spot SpO2 measurements (meastype 54) from getmeas. For continuous watch SpO2, prefer withings_get_intraday_activity with spo2_auto.",
     [...MEASTYPE_GROUPS.spo2],
   );
 
   server.registerTool(
-    "get_body_temperature",
+    "withings_get_body_temperature",
     {
       description:
         "Fetch body temperature. Spot readings (meastypes 12/71/73 via getmeas) come from thermometers or occasional device measures. For Withings watches, set include_intraday=true to fetch continuous core_body_temperature (max 24h window) — that is usually where watch temp lives.",
@@ -229,7 +229,7 @@ export function registerMeasureTools(
       try {
         let { startdate, enddate } = resolveUnixRange(args);
         log.info("Tool call", {
-          tool: "get_body_temperature",
+          tool: "withings_get_body_temperature",
           startdate,
           enddate,
           include_intraday: args.include_intraday ?? false,
@@ -266,7 +266,7 @@ export function registerMeasureTools(
           intraday: intraday ?? null,
         };
         log.info("Tool done", {
-          tool: "get_body_temperature",
+          tool: "withings_get_body_temperature",
           durationMs: Date.now() - started,
           spotCount: spot.count,
           include_intraday: Boolean(args.include_intraday),
@@ -274,7 +274,7 @@ export function registerMeasureTools(
         return textResult(result);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_body_temperature",
+          tool: "withings_get_body_temperature",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);
@@ -283,10 +283,10 @@ export function registerMeasureTools(
   );
 
   server.registerTool(
-    "get_heart_rate",
+    "withings_get_heart_rate",
     {
       description:
-        "Fetch heart rate. Spot readings (meastype 11 via getmeas) come from scale/BPM when you take a measurement. For Withings watches, set include_intraday=true (or use get_intraday_activity) for continuous HR — that is usually where watch HR lives (max 24h window).",
+        "Fetch heart rate. Spot readings (meastype 11 via getmeas) come from scale/BPM when you take a measurement. For Withings watches, set include_intraday=true (or use withings_get_intraday_activity) for continuous HR — that is usually where watch HR lives (max 24h window).",
       inputSchema: {
         ...rangeSchema,
         include_intraday: z
@@ -302,7 +302,7 @@ export function registerMeasureTools(
       try {
         let { startdate, enddate } = resolveUnixRange(args);
         log.info("Tool call", {
-          tool: "get_heart_rate",
+          tool: "withings_get_heart_rate",
           startdate,
           enddate,
           include_intraday: args.include_intraday ?? false,
@@ -336,7 +336,7 @@ export function registerMeasureTools(
           intraday: intraday ?? null,
         };
         log.info("Tool done", {
-          tool: "get_heart_rate",
+          tool: "withings_get_heart_rate",
           durationMs: Date.now() - started,
           spotCount: spot.count,
           include_intraday: Boolean(args.include_intraday),
@@ -344,7 +344,7 @@ export function registerMeasureTools(
         return textResult(result);
       } catch (e) {
         log.error("Tool failed", {
-          tool: "get_heart_rate",
+          tool: "withings_get_heart_rate",
           error: e instanceof Error ? e.message : String(e),
         });
         return errorResult(e);
