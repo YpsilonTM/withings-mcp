@@ -116,7 +116,7 @@ OAuth scopes requested: `user.info`, `user.metrics`, `user.activity`, `user.slee
 | Tool | Best for | Notes |
 |------|----------|--------|
 | `get_measure_types` | Reference | Static meastype catalog |
-| `get_measurements` | Scale / spot metrics | Filter with `meastypes` |
+| `get_measurements` | Scale / spot metrics | Filter with `meastypes`; not continuous watch vitals |
 | `get_weight` | Scale | Weight (type 1) |
 | `get_body_composition` | Scale | Fat, muscle, bone, hydration |
 | `get_blood_pressure` | BPM / scale spot | Systolic / diastolic / pulse |
@@ -126,12 +126,11 @@ OAuth scopes requested: `user.info`, `user.metrics`, `user.activity`, `user.slee
 | `get_activity` | Watch daily totals | Steps, calories, HR zones |
 | `get_intraday_activity` | Watch continuous vitals | HR, temp, SpO2, steps; **≤24h** per call |
 | `get_workouts` | Watch workouts | Logged sessions |
-| `get_sleep_summary` | Sleep device / watch nights | Per-night summaries |
-| `get_sleep` | Sleep series | High-frequency stages / vitals |
-| `list_heart_records` | ECG devices | Recording list |
+| `get_sleep_summary` | Sleep device / watch nights | Per-night summaries (default 7 days) |
+| `get_sleep` | Sleep series | High-frequency stages / vitals (default 24h) |
+| `list_heart_records` | ECG devices | Often empty without ECG hardware |
 | `get_heart_ecg` | ECG devices | Single signal by `signalid` |
 | `list_devices` | Account | Paired devices |
-| `get_user` | Account | Profile |
 | `get_goals` | Account | Goals |
 
 Example prompts:

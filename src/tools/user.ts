@@ -10,7 +10,8 @@ export function registerUserTools(
   server.registerTool(
     "list_devices",
     {
-      description: "List Withings devices paired to the authorized user account.",
+      description:
+        "List Withings devices paired to the authorized account (e.g. Scale, Activity Tracker, Sleep Monitor). Useful to see which data sources exist before querying.",
     },
     async () => {
       const started = Date.now();
@@ -35,34 +36,10 @@ export function registerUserTools(
   );
 
   server.registerTool(
-    "get_user",
-    {
-      description: "Get Withings user profile information for the authorized account.",
-    },
-    async () => {
-      const started = Date.now();
-      try {
-        log.info("Tool call", { tool: "get_user" });
-        const body = await client.request("/v2/user", { action: "get" });
-        log.info("Tool done", {
-          tool: "get_user",
-          durationMs: Date.now() - started,
-        });
-        return textResult(body);
-      } catch (e) {
-        log.error("Tool failed", {
-          tool: "get_user",
-          error: e instanceof Error ? e.message : String(e),
-        });
-        return errorResult(e);
-      }
-    },
-  );
-
-  server.registerTool(
     "get_goals",
     {
-      description: "Get user health goals configured in the Withings account.",
+      description:
+        "Get health goals configured in the Withings account (e.g. steps, weight, sleep targets), if the user has set any.",
     },
     async () => {
       const started = Date.now();

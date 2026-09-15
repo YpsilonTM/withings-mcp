@@ -139,17 +139,24 @@ export function registerActivityTools(
   server.registerTool(
     "get_workouts",
     {
-      description: "Fetch logged workouts for a date range.",
+      description:
+        "Fetch logged workouts from the watch/activity tracker for a date range (default last 7 days). Includes session type, duration, and optional metrics like calories, HR, distance, steps.",
       inputSchema: {
-        startdateymd: z.string().optional().describe("Start date YYYY-MM-DD."),
-        enddateymd: z.string().optional().describe("End date YYYY-MM-DD."),
+        startdateymd: z
+          .string()
+          .optional()
+          .describe("Start date YYYY-MM-DD. Default: 7 days ago."),
+        enddateymd: z
+          .string()
+          .optional()
+          .describe("End date YYYY-MM-DD. Default: today UTC."),
         data_fields: z
           .string()
           .optional()
           .describe(
             "Optional workout data fields (e.g. calories,hr_average,hr_min,hr_max,distance,steps,elevation).",
           ),
-        offset: z.number().int().optional(),
+        offset: z.number().int().optional().describe("Pagination offset."),
       },
     },
     async (args) => {

@@ -12,10 +12,18 @@ export function registerHeartTools(
     "list_heart_records",
     {
       description:
-        "List ECG / heart recordings (Heart v2 list), including AFib classification metadata.",
+        "List ECG / heart recordings (Heart v2 list), including AFib classification metadata. Requires an ECG-capable device (e.g. ScanWatch ECG / BeamO). Often empty if the user only has a scale + non-ECG tracker. Default range: last 30 days. Use get_heart_rate with include_intraday for continuous watch HR instead.",
       inputSchema: {
-        startdate: z.number().int().optional().describe("Start unix timestamp."),
-        enddate: z.number().int().optional().describe("End unix timestamp."),
+        startdate: z
+          .number()
+          .int()
+          .optional()
+          .describe("Start unix timestamp (seconds). Default: 30 days ago."),
+        enddate: z
+          .number()
+          .int()
+          .optional()
+          .describe("End unix timestamp (seconds). Default: now."),
         offset: z.number().int().optional().describe("Pagination offset."),
       },
     },
@@ -59,7 +67,7 @@ export function registerHeartTools(
     "get_heart_ecg",
     {
       description:
-        "Fetch a single ECG signal by signalid (from list_heart_records).",
+        "Fetch a single ECG waveform/signal by signalid from list_heart_records. Only useful when list_heart_records returned recordings (ECG-capable device). Not for continuous watch heart rate.",
       inputSchema: {
         signalid: z
           .union([z.string(), z.number()])

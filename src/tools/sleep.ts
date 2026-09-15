@@ -23,10 +23,16 @@ export function registerSleepTools(
     "get_sleep_summary",
     {
       description:
-        "Fetch per-night sleep summaries (score, stages, HR/RR stats, snoring, etc.). Typical sources: Sleep Analyzer / Sleep Mat, or watch sleep tracking.",
+        "Fetch per-night sleep summaries (score, stages, HR/RR stats, snoring, etc.). Default range is the last 7 days. Typical sources: Sleep Analyzer / Sleep Mat, or watch sleep tracking. For minute-level detail within a night, use get_sleep.",
       inputSchema: {
-        startdateymd: z.string().optional().describe("Start date YYYY-MM-DD."),
-        enddateymd: z.string().optional().describe("End date YYYY-MM-DD."),
+        startdateymd: z
+          .string()
+          .optional()
+          .describe("Start date YYYY-MM-DD. Default: 7 days ago."),
+        enddateymd: z
+          .string()
+          .optional()
+          .describe("End date YYYY-MM-DD. Default: today UTC."),
         data_fields: z
           .string()
           .optional()
@@ -35,7 +41,9 @@ export function registerSleepTools(
           .number()
           .int()
           .optional()
-          .describe("Only return nights updated after this unix timestamp."),
+          .describe(
+            "Only return nights updated after this unix timestamp. When set, date range params are omitted.",
+          ),
       },
     },
     async (args) => {
@@ -76,10 +84,18 @@ export function registerSleepTools(
     "get_sleep",
     {
       description:
-        "Fetch high-frequency sleep stage / vital series for a time range (Sleep get).",
+        "Fetch high-frequency sleep stage and vital series for a time window (Sleep get): stages, HR, respiration, snoring, HRV, etc. Default range is the last 24 hours. Prefer get_sleep_summary for multi-night overviews; use this for detailed series within a night. Typical sources: Sleep Analyzer / Sleep Mat, or watch sleep tracking.",
       inputSchema: {
-        startdate: z.number().int().optional().describe("Start unix timestamp."),
-        enddate: z.number().int().optional().describe("End unix timestamp."),
+        startdate: z
+          .number()
+          .int()
+          .optional()
+          .describe("Start unix timestamp (seconds). Default: 24h ago."),
+        enddate: z
+          .number()
+          .int()
+          .optional()
+          .describe("End unix timestamp (seconds). Default: now."),
         data_fields: z
           .string()
           .optional()

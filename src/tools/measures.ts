@@ -76,7 +76,7 @@ export function registerMeasureTools(
     "get_measure_types",
     {
       description:
-        "List known Withings measurement type IDs (weight, BP, SpO2, temperature, etc.). No API call.",
+        "List known Withings measurement type IDs used by getmeas (weight, BP, SpO2, spot temperature, etc.). No API call. For continuous watch vitals (HR, core temp, SpO2), prefer get_intraday_activity instead of these spot types.",
     },
     async () => {
       log.info("Tool call", { tool: "get_measure_types" });
@@ -94,14 +94,14 @@ export function registerMeasureTools(
     "get_measurements",
     {
       description:
-        "Fetch Withings health measurements (getmeas). Optionally filter by meastypes. Values are decoded (value * 10^unit).",
+        "Fetch spot/scale health measurements via getmeas (weight, composition, BP, spot HR/temp/SpO2, etc.). Optionally filter by meastypes. Values are decoded (value * 10^unit). This is NOT the main source for continuous watch vitals — use get_intraday_activity (or get_heart_rate / get_body_temperature with include_intraday=true) for those.",
       inputSchema: {
         ...rangeSchema,
         meastypes: z
           .array(z.number().int())
           .optional()
           .describe(
-            "Measurement type IDs to include. Omit for all. Use get_measure_types for the catalog.",
+            "Spot measurement type IDs to include. Omit for all. Use get_measure_types for the catalog. Continuous watch metrics are not in this list.",
           ),
       },
     },
