@@ -12,7 +12,10 @@ RUN npm prune --omit=dev
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup -S withings && adduser -S withings -G withings
+ENV WITHINGS_TOKEN_FILE=/data/tokens.json
+RUN addgroup -S withings && adduser -S withings -G withings \
+  && mkdir -p /data \
+  && chown withings:withings /data
 COPY --from=build /app/package.json /app/package-lock.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
