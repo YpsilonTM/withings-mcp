@@ -1,22 +1,18 @@
-# Example Cursor / Claude Desktop MCP config (stdio via Docker).
-#
-# {
-#   "mcpServers": {
-#     "withings": {
-#       "command": "docker",
-#       "args": [
-#         "run", "-i", "--rm",
-#         "-e", "WITHINGS_CLIENT_ID",
-#         "-e", "WITHINGS_CLIENT_SECRET",
-#         "-e", "WITHINGS_REFRESH_TOKEN",
-#         "-e", "WITHINGS_LOG_LEVEL=info",
-#         "ghcr.io/<owner>/withings-mcp:latest"
-#       ],
-#       "env": {
-#         "WITHINGS_CLIENT_ID": "your_client_id",
-#         "WITHINGS_CLIENT_SECRET": "your_client_secret",
-#         "WITHINGS_REFRESH_TOKEN": "your_refresh_token"
-#       }
-#     }
-#   }
-# }
+{
+  "mcpServers": {
+    "withings": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/YpsilonTM/withings-mcp",
+        "withings-mcp"
+      ],
+      "env": {
+        "WITHINGS_CLIENT_ID": "your_client_id",
+        "WITHINGS_CLIENT_SECRET": "your_client_secret",
+        "WITHINGS_TOKEN_FILE": "/absolute/path/to/tokens.json",
+        "WITHINGS_LOG_LEVEL": "info"
+      }
+    }
+  }
+}

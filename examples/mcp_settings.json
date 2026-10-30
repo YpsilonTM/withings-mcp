@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "withings": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/YpsilonTM/withings-mcp",
+        "withings-mcp"
+      ],
+      "env": {
+        "WITHINGS_CLIENT_ID": "",
+        "WITHINGS_CLIENT_SECRET": "",
+        "WITHINGS_REFRESH_TOKEN": "",
+        "WITHINGS_TOKEN_FILE": "/data/withings/tokens.json",
+        "WITHINGS_LOG_LEVEL": "info"
+      }
+    }
+  },
+  "_comment": "Bind WITHINGS_* secrets via MCPHub per-user credentials. Mount a host path to WITHINGS_TOKEN_FILE so rotated refresh tokens survive container restarts."
+}

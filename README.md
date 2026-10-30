@@ -1,13 +1,15 @@
 # Withings MCP Server
 
-Model Context Protocol (MCP) server for the [Withings Public API](https://developer.withings.com/). Query weight, body composition, heart rate, core body temperature, SpO2, activity, sleep, workouts, and ECG recordings from AI clients (Cursor, Claude Desktop, Docker MCP Gateway, etc.).
+Model Context Protocol (MCP) server for the [Withings Public API](https://developer.withings.com/). Query weight, body composition, heart rate, core body temperature, SpO2, activity, sleep, workouts, and ECG recordings from AI clients (Cursor, Claude Desktop, MCPHub, etc.).
+
+Python / **stdio** / run via **`uvx`** — no Docker image required.
 
 ## Features
 
-- **stdio MCP server** — works with Docker MCP Gateway / Toolkit catalogs
+- **stdio MCP server** — works with Cursor, Claude Desktop, MCPHub, and other MCP clients
 - **One-shot `auth` helper** — browser OAuth, prints tokens (no always-on auth service)
 - **Broad tool set** — scale measurements, watch/intraday vitals, sleep, heart/ECG, devices & goals
-- **Token refresh** — automatic access-token refresh; optional file to persist rotated refresh tokens
+- **Token refresh** — automatic access-token refresh with **atomic** persistence of rotated refresh tokens
 - **Structured stderr logging** — JSON lines, safe for MCP (stdout stays protocol-only)
 
 ## Scale vs watch (important)
@@ -24,7 +26,7 @@ Withings splits data by **how** it was recorded. Empty tool results usually mean
 **Spot vs intraday**
 
 - **Spot** (`getmeas` / tools without `include_intraday`) — discrete measurements when you step on the scale or take a reading. Often empty for watch-only vitals.
-- **Intraday** (`getintradayactivity`, max **24h** per call) — time series from the watch while you wear it. This is where continuous HR and `core_body_temperature` live.
+- **Intraday** (`getintradayactivity`, max **24h** per API call) — time series from the watch while you wear it. This is where continuous HR and `core_body_temperature` live. Ranges longer than 24h are split into consecutive windows automatically.
 
 Example: “body temp last 24h” from a ScanWatch → use `withings_get_body_temperature` with `include_intraday: true` (or `withings_get_intraday_activity` with `data_fields=core_body_temperature`), not spot-only temperature types.
 
@@ -43,64 +45,85 @@ http://localhost:8765/callback
 
 ### 2. Obtain a refresh token (one time)
 
-With Docker (recommended):
-
 ```bash
-docker run --rm -p 8765:8765 \
-  -e WITHINGS_CLIENT_ID=your_client_id \
-  -e WITHINGS_CLIENT_SECRET=your_client_secret \
-  ghcr.io/<owner>/withings-mcp:latest auth
+uvx --from git+https://github.com/YpsilonTM/withings-mcp withings-mcp auth \
+  --write ./tokens.json
 ```
 
-Or from source:
+Or from a local checkout:
 
 ```bash
-npm ci && npm run build
-WITHINGS_CLIENT_ID=... WITHINGS_CLIENT_SECRET=... node dist/index.js auth
+uv sync
+uv run withings-mcp auth --write ./tokens.json
 ```
+
+Set `WITHINGS_CLIENT_ID` and `WITHINGS_CLIENT_SECRET` in the environment (or a `.env` your shell loads) before running `auth`.
 
 1. Open the printed authorize URL in your browser
 2. Log in to Withings and accept
-3. Copy `refresh_token` from the JSON printed on stdout
-
-Optional: write tokens to a file:
-
-```bash
-... auth --write ./tokens.json
-```
+3. Tokens are printed as JSON on stdout; with `--write`, also saved to the given path
 
 ### 3. Run the MCP server
 
 ```bash
-docker run -i --rm \
-  -e WITHINGS_CLIENT_ID=your_client_id \
-  -e WITHINGS_CLIENT_SECRET=your_client_secret \
-  -e WITHINGS_REFRESH_TOKEN=your_refresh_token \
-  -e WITHINGS_LOG_LEVEL=info \
-  ghcr.io/<owner>/withings-mcp:latest
+export WITHINGS_CLIENT_ID=...
+export WITHINGS_CLIENT_SECRET=...
+export WITHINGS_TOKEN_FILE=./tokens.json   # or WITHINGS_REFRESH_TOKEN=...
+
+uvx --from git+https://github.com/YpsilonTM/withings-mcp withings-mcp
 ```
 
-`-i` is required so the client can speak MCP over stdin/stdout.
+## MCPHub / Cursor
 
-## Docker MCP Gateway catalog
+### MCPHub `mcp_settings.json`
 
-Add an entry like [`examples/catalog-entry.yaml`](examples/catalog-entry.yaml) to your gateway `catalog.yaml`, then put secrets in `secrets.env`:
-
-```env
-WITHINGS_CLIENT_ID=...
-WITHINGS_CLIENT_SECRET=...
-WITHINGS_REFRESH_TOKEN=...
+```json
+{
+  "mcpServers": {
+    "withings": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/YpsilonTM/withings-mcp",
+        "withings-mcp"
+      ],
+      "env": {
+        "WITHINGS_CLIENT_ID": "",
+        "WITHINGS_CLIENT_SECRET": "",
+        "WITHINGS_REFRESH_TOKEN": "",
+        "WITHINGS_TOKEN_FILE": "/data/withings/tokens.json",
+        "WITHINGS_LOG_LEVEL": "info"
+      }
+    }
+  }
+}
 ```
 
-**Required for long-lived deployments:** mount a writable volume and set `WITHINGS_TOKEN_FILE=/data/tokens.json` so rotated refresh tokens survive container restarts. Withings rotates refresh tokens on every refresh; without a writable store, auth will break after ~8 hours when the gateway starts a fresh container.
+Bind secrets via MCPHub per-user credentials rather than hard-coding them. The token file path must be mounted into the MCPHub container (Withings **rotates** the refresh token on every refresh; without a writable mount, auth breaks after the first refresh).
 
-Example volume (homeserver): `/home/ypsilon/data/withings:/data`
+See also [`examples/mcp_settings.json`](examples/mcp_settings.json).
 
-If your GHCR package is private and the gateway host cannot pull it, either grant the host a token with `read:packages`, or build the image on the host from this repo and keep `--pull never` (Docker MCP Gateway does this when the image is already local).
+### Cursor / Claude Desktop
 
-## Cursor / Claude Desktop
-
-See [`examples/cursor-mcp.json`](examples/cursor-mcp.json) for a Docker-based `mcpServers` snippet.
+```json
+{
+  "mcpServers": {
+    "withings": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/YpsilonTM/withings-mcp",
+        "withings-mcp"
+      ],
+      "env": {
+        "WITHINGS_CLIENT_ID": "your_client_id",
+        "WITHINGS_CLIENT_SECRET": "your_client_secret",
+        "WITHINGS_TOKEN_FILE": "/absolute/path/to/tokens.json"
+      }
+    }
+  }
+}
+```
 
 ## Environment variables
 
@@ -108,7 +131,7 @@ See [`examples/cursor-mcp.json`](examples/cursor-mcp.json) for a Docker-based `m
 |----------|----------|-------------|
 | `WITHINGS_CLIENT_ID` | Yes | OAuth client ID |
 | `WITHINGS_CLIENT_SECRET` | Yes | OAuth client secret |
-| `WITHINGS_REFRESH_TOKEN` | Yes (MCP) | Refresh token from `auth` (or provide via `WITHINGS_TOKEN_FILE`) |
+| `WITHINGS_REFRESH_TOKEN` | Yes (MCP)* | Refresh token from `auth` (*or provide via `WITHINGS_TOKEN_FILE`) |
 | `WITHINGS_TOKEN_FILE` | No | Path to persist tokens (default `/data/tokens.json` if `/data` exists) |
 | `WITHINGS_REDIRECT_PORT` | No | Auth callback port (default `8765`) |
 | `WITHINGS_LOG_LEVEL` | No | `error` \| `warn` \| `info` \| `debug` (default `info`) |
@@ -128,7 +151,7 @@ OAuth scopes requested: `user.info`, `user.metrics`, `user.activity`, `user.slee
 | `withings_get_body_temperature` | Watch (intraday) or spot | Use `include_intraday: true` for watch `core_body_temperature` |
 | `withings_get_spo2` | Spot SpO2 | Continuous watch SpO2 → `withings_get_intraday_activity` (`spo2_auto`) |
 | `withings_get_activity` | Watch daily totals | Steps, calories, HR zones |
-| `withings_get_intraday_activity` | Watch continuous vitals | HR, temp, SpO2, steps; **≤24h** per call |
+| `withings_get_intraday_activity` | Watch continuous vitals | HR, temp, SpO2, steps; **≤24h** per API call (auto-split) |
 | `withings_get_workouts` | Watch workouts | Logged sessions |
 | `withings_get_sleep_summary` | Sleep device / watch nights | Per-night summaries (default 7 days) |
 | `withings_get_sleep` | Sleep series | High-frequency stages / vitals (default 24h) |
@@ -146,11 +169,10 @@ Example prompts:
 
 ## Logging
 
-All logs go to **stderr** as one JSON object per line so they appear in `docker logs` / MCP Gateway without breaking the MCP session on stdout.
+All logs go to **stderr** as one JSON object per line so they never break the MCP session on stdout.
 
 ```bash
-# More detail while debugging auth or API errors
--e WITHINGS_LOG_LEVEL=debug
+WITHINGS_LOG_LEVEL=debug uv run withings-mcp
 ```
 
 Logged at `info`: startup config (booleans only), tool name + date range, Withings status, durations.  
@@ -158,39 +180,38 @@ Never logged: access/refresh tokens, client secret, Authorization headers.
 
 ## Rate limits
 
-Withings asks partners not to poll more often than about once every 10 minutes per user for sync-style usage. Prefer explicit date ranges when asking the model for historical data.
+Withings asks partners not to poll more often than about once every 10 minutes per user for sync-style usage. Prefer explicit date ranges when asking the model for historical data. API `status=601` is surfaced as a rate-limit error.
 
 ## Development
 
-```bash
-npm ci
-npm run build
-npm run auth          # tsx auth helper
-npm start             # MCP on stdio (needs env vars)
-```
-
-Build the image locally:
+Requires Python ≥ 3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-docker build -t withings-mcp:local .
-docker run --rm -p 8765:8765 \
-  -e WITHINGS_CLIENT_ID -e WITHINGS_CLIENT_SECRET \
-  withings-mcp:local auth
+uv sync
+uv run withings-mcp --help
+uv run withings-mcp auth --help
+uv run ruff check src tests
+uv run pytest
 ```
 
-Images are published to GHCR on pushes to `main` and version tags `v*` via GitHub Actions.
+MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector uv run withings-mcp
+```
 
 ## Troubleshooting
 
 | Symptom | What to try |
 |---------|-------------|
-| Auth callback never completes | Confirm redirect URI is exactly `http://localhost:8765/callback`; port `8765` free; use `-p 8765:8765` with Docker |
-| `status=343` / invalid token | Refresh token expired or revoked — re-run `auth` and update secrets |
+| Auth callback never completes | Confirm redirect URI is exactly `http://localhost:8765/callback`; port `8765` free |
+| `status=343` / invalid token | Refresh token expired or revoked — re-run `withings-mcp auth` and update secrets / token file |
 | `status=601` | Rate limited — back off |
 | Empty weight/composition | No scale sync in range |
 | Empty HR/temp without intraday | Watch data is usually intraday — set `include_intraday: true` or call `withings_get_intraday_activity` |
 | Empty data (`status=100`) | No measurements in range, or device never synced that metric |
-| MCP client hangs / protocol errors | Ensure nothing else writes to stdout; set `WITHINGS_LOG_LEVEL=debug` and inspect **stderr** / container logs |
+| MCP client hangs / protocol errors | Ensure nothing else writes to stdout; set `WITHINGS_LOG_LEVEL=debug` and inspect **stderr** |
+| Auth breaks after ~hours | Token file not writable / not mounted — set `WITHINGS_TOKEN_FILE` on a persistent path |
 
 ## License
 
